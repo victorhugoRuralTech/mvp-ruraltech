@@ -25,7 +25,8 @@ import {
   DollarSign,
   Calendar,
   LogOut,
-  Filter
+  Filter,
+  Printer
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -451,6 +452,261 @@ export default function RuralTech() {
     setSalesDateFilter({ day: "", month: "", year: "" });
     setIsSalesFilterActive(false);
     toast.success("Filtro removido!");
+  };
+
+  // Função para imprimir relatórios
+  const printReport = (type: 'cattle' | 'supplies' | 'sales') => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error("Não foi possível abrir a janela de impressão");
+      return;
+    }
+
+    let content = '';
+    const currentDate = new Date().toLocaleDateString('pt-BR', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    if (type === 'cattle') {
+      content = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Relatório de Gado - RuralTech</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1 { color: #10b981; text-align: center; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .info { margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            th { background-color: #10b981; color: white; }
+            tr:nth-child(even) { background-color: #f9f9f9; }
+            .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; }
+            .summary { background-color: #f0fdf4; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+            @media print {
+              body { padding: 0; }
+              button { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>🐄 RuralTech - Sistema de Gestão de Fazenda</h1>
+            <h2>Relatório de Gado Registrado</h2>
+            <p>Gerado em: ${currentDate}</p>
+          </div>
+          
+          <div class="summary">
+            <h3>Resumo</h3>
+            <p><strong>Total de Cabeças:</strong> ${cattle.length}</p>
+            <p><strong>Fêmeas:</strong> ${cattle.filter(c => c.sex === 'female').length}</p>
+            <p><strong>Machos:</strong> ${cattle.filter(c => c.sex === 'male').length}</p>
+            <p><strong>Lotes Ativos:</strong> ${new Set(cattle.map(c => c.lot)).size}</p>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Numeração</th>
+                <th>Sexo</th>
+                <th>Lote</th>
+                <th>Data de Cadastro</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${cattle.map(c => `
+                <tr>
+                  <td>${c.number}</td>
+                  <td>${c.sex === 'female' ? 'Fêmea' : 'Macho'}</td>
+                  <td>${c.lot}</td>
+                  <td>${new Date(c.createdAt).toLocaleDateString('pt-BR')}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div class="footer">
+            <p>RuralTech © ${new Date().getFullYear()} - Sistema de Gestão de Fazenda</p>
+          </div>
+        </body>
+        </html>
+      `;
+    } else if (type === 'supplies') {
+      const totalCost = supplies.reduce((sum, s) => sum + (s.cost * s.quantity), 0);
+      const feedCost = supplies.filter(s => s.type === 'feed').reduce((sum, s) => sum + (s.cost * s.quantity), 0);
+      const medicineCost = supplies.filter(s => s.type === 'medicine').reduce((sum, s) => sum + (s.cost * s.quantity), 0);
+
+      content = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Relatório de Insumos - RuralTech</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1 { color: #a855f7; text-align: center; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .info { margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            th { background-color: #a855f7; color: white; }
+            tr:nth-child(even) { background-color: #f9f9f9; }
+            .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; }
+            .summary { background-color: #faf5ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+            .cost-highlight { font-weight: bold; color: #a855f7; }
+            @media print {
+              body { padding: 0; }
+              button { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>📦 RuralTech - Sistema de Gestão de Fazenda</h1>
+            <h2>Relatório de Insumos Registrados</h2>
+            <p>Gerado em: ${currentDate}</p>
+          </div>
+          
+          <div class="summary">
+            <h3>Resumo Financeiro</h3>
+            <p><strong>Total de Insumos:</strong> ${supplies.length} itens</p>
+            <p><strong>Custo Total:</strong> <span class="cost-highlight">${totalCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span></p>
+            <p><strong>Rações:</strong> ${feedCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+            <p><strong>Medicamentos:</strong> ${medicineCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Tipo</th>
+                <th>Quantidade</th>
+                <th>Unidade</th>
+                <th>Custo Unitário</th>
+                <th>Custo Total</th>
+                <th>Data de Cadastro</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${supplies.map(s => `
+                <tr>
+                  <td>${s.name}</td>
+                  <td>${s.type === 'feed' ? 'Ração' : 'Medicamento'}</td>
+                  <td>${s.quantity}</td>
+                  <td>${s.unit}</td>
+                  <td>${s.cost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                  <td class="cost-highlight">${(s.cost * s.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                  <td>${new Date(s.createdAt).toLocaleDateString('pt-BR')}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div class="footer">
+            <p>RuralTech © ${new Date().getFullYear()} - Sistema de Gestão de Fazenda</p>
+          </div>
+        </body>
+        </html>
+      `;
+    } else if (type === 'sales') {
+      const totalRevenue = sales.reduce((sum, s) => sum + s.totalValue, 0);
+      const totalQuantity = sales.reduce((sum, s) => sum + s.quantity, 0);
+
+      content = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Relatório de Vendas - RuralTech</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1 { color: #22c55e; text-align: center; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .info { margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            th { background-color: #22c55e; color: white; }
+            tr:nth-child(even) { background-color: #f9f9f9; }
+            .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; }
+            .summary { background-color: #f0fdf4; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+            .revenue-highlight { font-weight: bold; color: #22c55e; }
+            @media print {
+              body { padding: 0; }
+              button { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>💰 RuralTech - Sistema de Gestão de Fazenda</h1>
+            <h2>Relatório de Vendas Registradas</h2>
+            <p>Gerado em: ${currentDate}</p>
+          </div>
+          
+          <div class="summary">
+            <h3>Resumo de Vendas</h3>
+            <p><strong>Total de Vendas:</strong> ${sales.length} transações</p>
+            <p><strong>Quantidade Total Vendida:</strong> ${totalQuantity} cabeças</p>
+            <p><strong>Receita Total:</strong> <span class="revenue-highlight">${totalRevenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span></p>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Lote</th>
+                <th>Sexo</th>
+                <th>Quantidade</th>
+                <th>Comprador</th>
+                <th>Responsável</th>
+                <th>Status</th>
+                <th>Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${sales.map(s => {
+                const buyer = buyers.find(b => b.id === s.buyerId);
+                const employee = employees.find(e => e.id === s.employeeId);
+                const status = [];
+                if (s.isFed) status.push('Alimentado');
+                if (s.isVaccinated) status.push('Vacinado');
+                
+                return `
+                  <tr>
+                    <td>${new Date(s.date).toLocaleDateString('pt-BR')}</td>
+                    <td>${s.lot}</td>
+                    <td>${s.sex === 'female' ? 'Fêmea' : 'Macho'}</td>
+                    <td>${s.quantity}</td>
+                    <td>${buyer?.name || 'N/A'}</td>
+                    <td>${employee?.name || 'N/A'}</td>
+                    <td>${status.join(', ') || '-'}</td>
+                    <td class="revenue-highlight">${s.totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+
+          <div class="footer">
+            <p>RuralTech © ${new Date().getFullYear()} - Sistema de Gestão de Fazenda</p>
+          </div>
+        </body>
+        </html>
+      `;
+    }
+
+    printWindow.document.write(content);
+    printWindow.document.close();
+    
+    // Aguardar o carregamento e imprimir
+    printWindow.onload = () => {
+      printWindow.print();
+    };
+
+    toast.success("Relatório aberto para impressão!");
   };
 
   // Reports
@@ -1568,6 +1824,57 @@ export default function RuralTech() {
 
           {/* Reports */}
           <TabsContent value="reports" className="space-y-6">
+            {/* Botões de Impressão */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Card className="shadow-lg hover:shadow-xl transition-shadow cursor-pointer border-2 border-emerald-200 hover:border-emerald-400">
+                <CardContent className="pt-6">
+                  <Button 
+                    onClick={() => printReport('cattle')}
+                    className="w-full h-auto py-6 bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 flex flex-col items-center gap-3"
+                    disabled={cattle.length === 0}
+                  >
+                    <Printer className="w-8 h-8" />
+                    <div className="text-center">
+                      <p className="font-bold text-lg">Imprimir Relatório de Gado</p>
+                      <p className="text-xs opacity-90 mt-1">{cattle.length} cabeças registradas</p>
+                    </div>
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-lg hover:shadow-xl transition-shadow cursor-pointer border-2 border-purple-200 hover:border-purple-400">
+                <CardContent className="pt-6">
+                  <Button 
+                    onClick={() => printReport('supplies')}
+                    className="w-full h-auto py-6 bg-gradient-to-br from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 flex flex-col items-center gap-3"
+                    disabled={supplies.length === 0}
+                  >
+                    <Printer className="w-8 h-8" />
+                    <div className="text-center">
+                      <p className="font-bold text-lg">Imprimir Relatório de Insumos</p>
+                      <p className="text-xs opacity-90 mt-1">{supplies.length} itens registrados</p>
+                    </div>
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-lg hover:shadow-xl transition-shadow cursor-pointer border-2 border-green-200 hover:border-green-400">
+                <CardContent className="pt-6">
+                  <Button 
+                    onClick={() => printReport('sales')}
+                    className="w-full h-auto py-6 bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 flex flex-col items-center gap-3"
+                    disabled={sales.length === 0}
+                  >
+                    <Printer className="w-8 h-8" />
+                    <div className="text-center">
+                      <p className="font-bold text-lg">Imprimir Relatório de Vendas</p>
+                      <p className="text-xs opacity-90 mt-1">{sales.length} vendas registradas</p>
+                    </div>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="shadow-lg">
                 <CardHeader>
