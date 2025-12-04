@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "RuralTech",
-  description: "Estagio UMFG",
+  description: "Sistema de Gestão Rural",
 };
 
 export default function RootLayout({
