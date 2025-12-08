@@ -27,9 +27,9 @@ export default function LoginPage() {
         return;
       }
 
-      // Buscar usuário no Supabase usando os nomes corretos das colunas
+      // Buscar usuário no Supabase usando a tabela app_users
       const { data: usuarioEncontrado, error } = await supabase
-        .from('users')
+        .from('app_users')
         .select('*')
         .eq('username', usuario)
         .eq('password', senha)
