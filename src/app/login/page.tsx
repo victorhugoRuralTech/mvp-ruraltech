@@ -5,39 +5,64 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
   const [usuario, setUsuario] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro("");
+    setLoading(true);
     
-    if (!usuario || !senha) {
-      setErro("Por favor, preencha todos os campos");
-      return;
+    try {
+      if (!usuario || !senha) {
+        setErro("Por favor, preencha todos os campos");
+        setLoading(false);
+        return;
+      }
+
+      // Buscar usuário no Supabase usando 'username' e 'password' (nomes corretos das colunas)
+      const { data: usuariosEncontrados, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('username', usuario)
+        .eq('password', senha);
+
+      if (error) {
+        console.error('Erro ao buscar usuário:', error);
+        setErro("Erro ao processar login. Tente novamente.");
+        setLoading(false);
+        return;
+      }
+
+      // Verificar se encontrou algum usuário
+      if (!usuariosEncontrados || usuariosEncontrados.length === 0) {
+        setErro("Usuário inválido, tente novamente");
+        setLoading(false);
+        return;
+      }
+
+      const usuarioEncontrado = usuariosEncontrados[0];
+
+      // Login bem-sucedido
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("usuarioAtual", usuario);
+      localStorage.setItem("userId", usuarioEncontrado.id);
+      
+      toast.success("Login realizado com sucesso!");
+      router.push("/");
+    } catch (error) {
+      console.error('Erro no login:', error);
+      setErro("Erro ao processar login. Tente novamente.");
+    } finally {
+      setLoading(false);
     }
-
-    // Buscar usuários cadastrados
-    const usuariosExistentes = JSON.parse(localStorage.getItem("usuarios") || "[]");
-    
-    // Verificar se o usuário existe e a senha está correta
-    const usuarioEncontrado = usuariosExistentes.find(
-      (u: any) => u.usuario === usuario && u.senha === senha
-    );
-
-    if (!usuarioEncontrado) {
-      setErro("Usuário inválido, tente novamente");
-      return;
-    }
-
-    // Login bem-sucedido
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("usuarioAtual", usuario);
-    router.push("/");
   };
 
   return (
@@ -63,6 +88,7 @@ export default function LoginPage() {
                 onChange={(e) => setUsuario(e.target.value)}
                 className="w-full bg-transparent border-gray-700 text-white focus:border-green-500 focus:ring-green-500"
                 placeholder="Digite seu usuário"
+                disabled={loading}
               />
             </div>
 
@@ -77,6 +103,7 @@ export default function LoginPage() {
                 onChange={(e) => setSenha(e.target.value)}
                 className="w-full bg-transparent border-gray-700 text-white focus:border-green-500 focus:ring-green-500"
                 placeholder="Digite sua senha"
+                disabled={loading}
               />
             </div>
 
@@ -89,8 +116,9 @@ export default function LoginPage() {
             <Button
               type="submit"
               className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-6 text-lg rounded-lg transition-all"
+              disabled={loading}
             >
-              Entrar
+              {loading ? "Entrando..." : "Entrar"}
             </Button>
 
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm">
