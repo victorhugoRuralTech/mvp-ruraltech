@@ -27,28 +27,20 @@ export default function LoginPage() {
         return;
       }
 
-      // Buscar usuário no Supabase usando 'username' e 'password' (nomes corretos das colunas)
-      const { data: usuariosEncontrados, error } = await supabase
+      // Buscar usuário no Supabase usando os nomes corretos das colunas
+      const { data: usuarioEncontrado, error } = await supabase
         .from('users')
         .select('*')
         .eq('username', usuario)
-        .eq('password', senha);
+        .eq('password', senha)
+        .single();
 
-      if (error) {
+      if (error || !usuarioEncontrado) {
         console.error('Erro ao buscar usuário:', error);
-        setErro("Erro ao processar login. Tente novamente.");
-        setLoading(false);
-        return;
-      }
-
-      // Verificar se encontrou algum usuário
-      if (!usuariosEncontrados || usuariosEncontrados.length === 0) {
         setErro("Usuário inválido, tente novamente");
         setLoading(false);
         return;
       }
-
-      const usuarioEncontrado = usuariosEncontrados[0];
 
       // Login bem-sucedido
       localStorage.setItem("isLoggedIn", "true");
@@ -129,7 +121,7 @@ export default function LoginPage() {
                 Esqueceu sua senha?
               </a>
               <a
-                href="/register"
+                href="/cadastro"
                 className="text-gray-400 hover:text-green-500 transition-colors"
               >
                 Ainda não tenho uma conta?

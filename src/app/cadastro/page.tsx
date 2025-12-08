@@ -34,20 +34,20 @@ export default function CadastroPage() {
         return;
       }
 
-      // Verificar se o usuário já existe no Supabase usando 'username' (nome correto da coluna)
-      const { data: existingUsers, error: checkError } = await supabase
+      // Verificar se o usuário já existe no Supabase usando o nome correto da coluna
+      const { data: existingUser, error: checkError } = await supabase
         .from('users')
         .select('username')
-        .eq('username', usuario);
+        .eq('username', usuario)
+        .single();
 
-      // Se encontrou algum usuário com esse nome
-      if (existingUsers && existingUsers.length > 0) {
+      if (existingUser) {
         setErro("Usuário já cadastrado");
         setLoading(false);
         return;
       }
 
-      // Criar novo usuário no Supabase usando 'username' e 'password' (nomes corretos das colunas)
+      // Criar novo usuário no Supabase usando os nomes corretos das colunas
       const { data: newUser, error: insertError } = await supabase
         .from('users')
         .insert([{ username: usuario, password: senha }])
