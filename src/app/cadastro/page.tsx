@@ -6,16 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-async function adicionarCliente() {
-  const { error } = await supabase
-    .from('clientes')
-    .insert([{ nome: 'Pedro' }])
-
-  if (!error) {
-    carregarClientes() 
-  }
-}
-
 export default function CadastroPage() {
   const router = useRouter();
   const [usuario, setUsuario] = useState("");
@@ -37,34 +27,23 @@ export default function CadastroPage() {
       return;
     }
 
-   import { supabase } from "@/lib/supabase";
+    // Buscar usuários existentes
+    const usuariosExistentes = JSON.parse(localStorage.getItem("usuarios") || "[]");
+    
+    // Verificar se o usuário já existe
+    const usuarioExiste = usuariosExistentes.find(
+      (u: any) => u.usuario === usuario
+    );
 
-const handleCadastro = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setErro("");
+    if (usuarioExiste) {
+      setErro("Usuário já cadastrado");
+      return;
+    }
 
-  if (!usuario || !senha || !confirmarSenha) {
-    setErro("Por favor, preencha todos os campos");
-    return;
-  }
-
-  if (senha !== confirmarSenha) {
-    setErro("As senhas não coincidem");
-    return;
-  }
-
-  // Inserir no Supabase
-  const { data, error } = await supabase
-    .from("usuarios")
-    .insert([{ usuario, senha }]);
-
-  if (error) {
-    setErro("Erro ao salvar no Supabase: " + error.message);
-    return;
-  }
-
-  router.push("/login");
-};
+    // Adicionar novo usuário
+    const novoUsuario = { usuario, senha };
+    usuariosExistentes.push(novoUsuario);
+    localStorage.setItem("usuarios", JSON.stringify(usuariosExistentes));
 
     // Redirecionar para login
     router.push("/login");
