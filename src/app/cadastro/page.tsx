@@ -6,6 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+async function adicionarCliente() {
+  const { error } = await supabase
+    .from('clientes')
+    .insert([{ nome: 'Pedro' }])
+
+  if (!error) {
+    carregarClientes() 
+  }
+}
+
 export default function CadastroPage() {
   const router = useRouter();
   const [usuario, setUsuario] = useState("");
