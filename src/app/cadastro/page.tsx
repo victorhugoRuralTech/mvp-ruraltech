@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
 
 export default function CadastroPage() {
   const router = useRouter();
@@ -14,68 +12,41 @@ export default function CadastroPage() {
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
   const [erro, setErro] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const handleCadastro = async (e: React.FormEvent) => {
+  const handleCadastro = (e: React.FormEvent) => {
     e.preventDefault();
     setErro("");
-    setLoading(true);
 
-    try {
-      if (!usuario || !senha || !confirmarSenha) {
-        setErro("Por favor, preencha todos os campos");
-        setLoading(false);
-        return;
-      }
-
-      if (senha !== confirmarSenha) {
-        setErro("As senhas não coincidem");
-        setLoading(false);
-        return;
-      }
-
-      // Verificar se o usuário já existe no Supabase
-      const { data: existingUser, error: checkError } = await supabase
-        .from('app_users')
-        .select('usuario')
-        .eq('usuario', usuario)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error('Erro ao verificar usuário:', checkError);
-        setErro("Erro ao verificar usuário. Tente novamente.");
-        setLoading(false);
-        return;
-      }
-
-      if (existingUser) {
-        setErro("Usuário já cadastrado");
-        setLoading(false);
-        return;
-      }
-
-      // Criar novo usuário no Supabase
-      const { data: newUser, error: insertError } = await supabase
-        .from('app_users')
-        .insert([{ usuario, senha }])
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error('Erro ao criar usuário:', insertError);
-        setErro("Erro ao criar usuário. Tente novamente.");
-        setLoading(false);
-        return;
-      }
-
-      toast.success("Cadastro realizado com sucesso!");
-      router.push("/login");
-    } catch (error) {
-      console.error('Erro no cadastro:', error);
-      setErro("Erro ao processar cadastro. Tente novamente.");
-    } finally {
-      setLoading(false);
+    if (!usuario || !senha || !confirmarSenha) {
+      setErro("Por favor, preencha todos os campos");
+      return;
     }
+
+    if (senha !== confirmarSenha) {
+      setErro("As senhas não coincidem");
+      return;
+    }
+
+    // Buscar usuários existentes
+    const usuariosExistentes = JSON.parse(localStorage.getItem("usuarios") || "[]");
+    
+    // Verificar se o usuário já existe
+    const usuarioExiste = usuariosExistentes.find(
+      (u: any) => u.usuario === usuario
+    );
+
+    if (usuarioExiste) {
+      setErro("Usuário já cadastrado");
+      return;
+    }
+
+    // Adicionar novo usuário
+    const novoUsuario = { usuario, senha };
+    usuariosExistentes.push(novoUsuario);
+    localStorage.setItem("usuarios", JSON.stringify(usuariosExistentes));
+
+    // Redirecionar para login
+    router.push("/login");
   };
 
   return (
@@ -122,7 +93,6 @@ export default function CadastroPage() {
                 onChange={(e) => setUsuario(e.target.value)}
                 className="w-full bg-transparent border-gray-700 text-white focus:border-green-500 focus:ring-green-500"
                 placeholder="Digite seu usuário"
-                disabled={loading}
               />
             </div>
 
@@ -137,7 +107,6 @@ export default function CadastroPage() {
                 onChange={(e) => setSenha(e.target.value)}
                 className="w-full bg-transparent border-gray-700 text-white focus:border-green-500 focus:ring-green-500"
                 placeholder="Digite sua senha"
-                disabled={loading}
               />
             </div>
 
@@ -152,7 +121,6 @@ export default function CadastroPage() {
                 onChange={(e) => setConfirmarSenha(e.target.value)}
                 className="w-full bg-transparent border-gray-700 text-white focus:border-green-500 focus:ring-green-500"
                 placeholder="Confirme sua senha"
-                disabled={loading}
               />
             </div>
 
@@ -165,9 +133,8 @@ export default function CadastroPage() {
             <Button
               type="submit"
               className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-6 text-lg rounded-lg transition-all"
-              disabled={loading}
             >
-              {loading ? "Cadastrando..." : "Cadastrar"}
+              Cadastrar
             </Button>
 
             <div className="flex justify-center items-center gap-2">

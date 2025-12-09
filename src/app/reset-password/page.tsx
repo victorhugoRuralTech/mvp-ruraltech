@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -15,67 +13,46 @@ export default function ResetPasswordPage() {
   const [confirmarSenha, setConfirmarSenha] = useState("");
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const handleResetPassword = async (e: React.FormEvent) => {
+  const handleResetPassword = (e: React.FormEvent) => {
     e.preventDefault();
     setErro("");
     setSucesso("");
-    setLoading(true);
 
-    try {
-      if (!usuario || !novaSenha || !confirmarSenha) {
-        setErro("Por favor, preencha todos os campos");
-        setLoading(false);
-        return;
-      }
-
-      // Verificar se as senhas coincidem
-      if (novaSenha !== confirmarSenha) {
-        setErro("As senhas não coincidem");
-        setLoading(false);
-        return;
-      }
-
-      // Verificar se o usuário existe no Supabase
-      const { data: usuarioExistente, error: checkError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('usuario', usuario)
-        .single();
-
-      if (checkError || !usuarioExistente) {
-        setErro("Usuário não encontrado. Verifique o nome de usuário e tente novamente.");
-        setLoading(false);
-        return;
-      }
-
-      // Atualizar a senha do usuário no Supabase
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({ senha: novaSenha })
-        .eq('usuario', usuario);
-
-      if (updateError) {
-        console.error('Erro ao atualizar senha:', updateError);
-        setErro("Erro ao redefinir senha. Tente novamente.");
-        setLoading(false);
-        return;
-      }
-
-      setSucesso("Senha alterada com sucesso!");
-      toast.success("Senha redefinida com sucesso!");
-      
-      // Redirecionar para login após 2 segundos
-      setTimeout(() => {
-        router.push("/login");
-      }, 2000);
-    } catch (error) {
-      console.error('Erro ao redefinir senha:', error);
-      setErro("Erro ao processar redefinição. Tente novamente.");
-    } finally {
-      setLoading(false);
+    if (!usuario || !novaSenha || !confirmarSenha) {
+      setErro("Por favor, preencha todos os campos");
+      return;
     }
+
+    // Verificar se as senhas coincidem
+    if (novaSenha !== confirmarSenha) {
+      setErro("As senhas não coincidem");
+      return;
+    }
+
+    // Buscar usuários cadastrados
+    const usuariosExistentes = JSON.parse(localStorage.getItem("usuarios") || "[]");
+    
+    // Verificar se o usuário existe
+    const usuarioIndex = usuariosExistentes.findIndex(
+      (u: any) => u.usuario === usuario
+    );
+
+    if (usuarioIndex === -1) {
+      setErro("Usuário não cadastrado");
+      return;
+    }
+
+    // Atualizar a senha do usuário
+    usuariosExistentes[usuarioIndex].senha = novaSenha;
+    localStorage.setItem("usuarios", JSON.stringify(usuariosExistentes));
+
+    setSucesso("Senha alterada com sucesso!");
+    
+    // Redirecionar para login após 2 segundos
+    setTimeout(() => {
+      router.push("/login");
+    }, 2000);
   };
 
   return (
@@ -110,7 +87,6 @@ export default function ResetPasswordPage() {
                 onChange={(e) => setUsuario(e.target.value)}
                 className="w-full bg-transparent border-gray-700 text-white focus:border-green-500 focus:ring-green-500"
                 placeholder="Digite seu usuário"
-                disabled={loading}
               />
             </div>
 
@@ -125,7 +101,6 @@ export default function ResetPasswordPage() {
                 onChange={(e) => setNovaSenha(e.target.value)}
                 className="w-full bg-transparent border-gray-700 text-white focus:border-green-500 focus:ring-green-500"
                 placeholder="Digite sua nova senha"
-                disabled={loading}
               />
             </div>
 
@@ -140,7 +115,6 @@ export default function ResetPasswordPage() {
                 onChange={(e) => setConfirmarSenha(e.target.value)}
                 className="w-full bg-transparent border-gray-700 text-white focus:border-green-500 focus:ring-green-500"
                 placeholder="Confirme sua nova senha"
-                disabled={loading}
               />
             </div>
 
@@ -159,9 +133,8 @@ export default function ResetPasswordPage() {
             <Button
               type="submit"
               className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-6 text-lg rounded-lg transition-all"
-              disabled={loading}
             >
-              {loading ? "Salvando..." : "Salvar"}
+              Salvar
             </Button>
 
             <div className="flex justify-center">
