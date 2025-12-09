@@ -37,23 +37,34 @@ export default function CadastroPage() {
       return;
     }
 
-    // Buscar usuários existentes
-    const usuariosExistentes = JSON.parse(localStorage.getItem("usuarios") || "[]");
-    
-    // Verificar se o usuário já existe
-    const usuarioExiste = usuariosExistentes.find(
-      (u: any) => u.usuario === usuario
-    );
+   import { supabase } from "@/lib/supabase";
 
-    if (usuarioExiste) {
-      setErro("Usuário já cadastrado");
-      return;
-    }
+const handleCadastro = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setErro("");
 
-    // Adicionar novo usuário
-    const novoUsuario = { usuario, senha };
-    usuariosExistentes.push(novoUsuario);
-    localStorage.setItem("usuarios", JSON.stringify(usuariosExistentes));
+  if (!usuario || !senha || !confirmarSenha) {
+    setErro("Por favor, preencha todos os campos");
+    return;
+  }
+
+  if (senha !== confirmarSenha) {
+    setErro("As senhas não coincidem");
+    return;
+  }
+
+  // Inserir no Supabase
+  const { data, error } = await supabase
+    .from("usuarios")
+    .insert([{ usuario, senha }]);
+
+  if (error) {
+    setErro("Erro ao salvar no Supabase: " + error.message);
+    return;
+  }
+
+  router.push("/login");
+};
 
     // Redirecionar para login
     router.push("/login");
