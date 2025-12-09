@@ -27,17 +27,23 @@ export default function LoginPage() {
         return;
       }
 
-      // Buscar usuário no Supabase usando a tabela app_users
+      // Buscar usuário no Supabase
       const { data: usuarioEncontrado, error } = await supabase
         .from('app_users')
         .select('*')
-        .eq('username', usuario)
-        .eq('password', senha)
-        .single();
+        .eq('usuario', usuario)
+        .eq('senha', senha)
+        .maybeSingle();
 
-      if (error || !usuarioEncontrado) {
+      if (error) {
         console.error('Erro ao buscar usuário:', error);
-        setErro("Usuário inválido, tente novamente");
+        setErro("Erro ao processar login. Tente novamente.");
+        setLoading(false);
+        return;
+      }
+
+      if (!usuarioEncontrado) {
+        setErro("Usuário ou senha inválidos");
         setLoading(false);
         return;
       }

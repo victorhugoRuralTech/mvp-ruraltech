@@ -34,14 +34,14 @@ export default function CadastroPage() {
         return;
       }
 
-      // Verificar se o usuário já existe na tabela app_users
+      // Verificar se o usuário já existe no Supabase
       const { data: existingUser, error: checkError } = await supabase
         .from('app_users')
-        .select('username')
-        .eq('username', usuario)
+        .select('usuario')
+        .eq('usuario', usuario)
         .maybeSingle();
 
-      if (checkError && checkError.code !== 'PGRST116') {
+      if (checkError) {
         console.error('Erro ao verificar usuário:', checkError);
         setErro("Erro ao verificar usuário. Tente novamente.");
         setLoading(false);
@@ -54,10 +54,10 @@ export default function CadastroPage() {
         return;
       }
 
-      // Criar novo usuário na tabela app_users
+      // Criar novo usuário no Supabase
       const { data: newUser, error: insertError } = await supabase
         .from('app_users')
-        .insert([{ username: usuario, password: senha }])
+        .insert([{ usuario, senha }])
         .select()
         .single();
 

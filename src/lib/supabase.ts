@@ -8,8 +8,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 // Types para o banco de dados
 export interface User {
   id: string;
-  username: string;
-  password: string;
+  usuario: string;
+  senha: string;
   created_at: string;
 }
 
